@@ -11,6 +11,7 @@
 TestBuild/
 RangE/
 AudioBackup_*/
+Release/
 
 # Visual Studio / Rider / VS Code
 .vs/
