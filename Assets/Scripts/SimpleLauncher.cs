@@ -32,6 +32,7 @@ public class SimpleLauncher : MonoBehaviour
     [Header("Launch Points")]
     public Transform firePoint;
     public Transform rainFirePoint;
+    public float firePointAimYOffset = 0f;
     public bool randomlyUseRainFirePointForProjectiles = true;
     public bool aimProjectilesAtAvatarHead = true;
     public bool makeFirePointTrackAvatarHead = true;
@@ -172,20 +173,32 @@ public class SimpleLauncher : MonoBehaviour
         if (headTransform == null)
             return;
 
-        TrackLaunchPointToHead(firePoint, headTransform, makeFirePointTrackAvatarHead);
-        TrackLaunchPointToHead(rainFirePoint, headTransform, makeRainFirePointTrackAvatarHead);
+        TrackLaunchPointToHead(firePoint, ResolveAimPositionForLaunchPoint(firePoint, headTransform), makeFirePointTrackAvatarHead);
+        TrackLaunchPointToHead(rainFirePoint, ResolveAimPositionForLaunchPoint(rainFirePoint, headTransform), makeRainFirePointTrackAvatarHead);
     }
 
-    void TrackLaunchPointToHead(Transform launchPoint, Transform headTransform, bool enabled)
+    void TrackLaunchPointToHead(Transform launchPoint, Vector3 targetPosition, bool enabled)
     {
-        if (!enabled || launchPoint == null || headTransform == null)
+        if (!enabled || launchPoint == null)
             return;
 
-        Vector3 direction = headTransform.position - launchPoint.position;
+        Vector3 direction = targetPosition - launchPoint.position;
         if (direction.sqrMagnitude <= 0.0001f)
             return;
 
         launchPoint.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+    }
+
+    Vector3 ResolveAimPositionForLaunchPoint(Transform launchPoint, Transform headTransform)
+    {
+        if (headTransform == null)
+            return Vector3.zero;
+
+        Vector3 aimPosition = headTransform.position;
+        if (launchPoint == firePoint)
+            aimPosition += Vector3.up * firePointAimYOffset;
+
+        return aimPosition;
     }
 
     void HandleKeyboardInput()
@@ -1111,7 +1124,8 @@ public class SimpleLauncher : MonoBehaviour
         if (launchOrigin == null || headTransform == null)
             return Vector3.zero;
 
-        Vector3 direction = headTransform.position - launchOrigin.position;
+        Vector3 targetPosition = ResolveAimPositionForLaunchPoint(launchOrigin, headTransform);
+        Vector3 direction = targetPosition - launchOrigin.position;
         return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.zero;
     }
 

@@ -1438,6 +1438,7 @@ MonoBehaviour:
   rainDropRandomYaw: 0
   firePoint: {fileID: 1398247974}
   rainFirePoint: {fileID: 1535235841}
+  firePointAimYOffset: 0
   randomlyUseRainFirePointForProjectiles: 1
   aimProjectilesAtAvatarHead: 1
   makeFirePointTrackAvatarHead: 1

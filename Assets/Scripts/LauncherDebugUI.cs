@@ -134,6 +134,7 @@ public class LauncherDebugUI : MonoBehaviour
     private Vector3 initialCameraForward;
     private bool cameraPositionInitialized;
     private Transform avatarRootTransform;
+    private Transform avatarModelTransform;
     private Vector3 avatarBasePosition;
     private bool avatarBasePositionInitialized;
 
@@ -158,7 +159,9 @@ public class LauncherDebugUI : MonoBehaviour
         ApplyCommandSettings();
         ApplySoundSettings();
         ApplyStickerSettings();
+        UpdateProfileSpriteTracking();
         ApplyAvatarPositionOffset();
+        UpdateProfileSpriteTracking();
     }
 
     void OnEnable()
@@ -171,13 +174,13 @@ public class LauncherDebugUI : MonoBehaviour
         SyncPortTexts();
         ApplyBackgroundState();
         ApplyStickerSettings();
+        UpdateProfileSpriteTracking();
         ApplyAvatarPositionOffset();
+        UpdateProfileSpriteTracking();
     }
 
     void Update()
     {
-        UpdateProfileSpriteTracking();
-
         if (InputKeyHelper.GetKeyDown(backgroundToggleKey))
             ToggleBackgroundTransparency();
 
@@ -210,6 +213,7 @@ public class LauncherDebugUI : MonoBehaviour
     void LateUpdate()
     {
         ApplyAvatarPositionOffset();
+        UpdateProfileSpriteTracking();
     }
 
     void OnApplicationQuit()
@@ -317,7 +321,8 @@ public class LauncherDebugUI : MonoBehaviour
         if (animator == null)
             animator = Object.FindAnyObjectByType<Animator>();
 
-        avatarRootTransform = animator != null ? animator.transform : null;
+        avatarModelTransform = animator != null ? animator.transform : null;
+        avatarRootTransform = EnsureAvatarGuideOffsetRoot(avatarModelTransform);
         if (avatarRootTransform != null && !avatarBasePositionInitialized)
         {
             avatarBasePosition = avatarRootTransform.position;
@@ -325,6 +330,28 @@ public class LauncherDebugUI : MonoBehaviour
         }
 
         return avatarRootTransform;
+    }
+
+    Transform EnsureAvatarGuideOffsetRoot(Transform modelRoot)
+    {
+        if (modelRoot == null)
+            return null;
+
+        if (modelRoot.parent != null && modelRoot.parent.name.EndsWith("_GuideOffsetRoot", System.StringComparison.Ordinal))
+            return modelRoot.parent;
+
+        Transform originalParent = modelRoot.parent;
+        Vector3 worldPosition = modelRoot.position;
+        Quaternion worldRotation = modelRoot.rotation;
+
+        GameObject offsetRoot = new GameObject(modelRoot.name + "_GuideOffsetRoot");
+        offsetRoot.transform.SetParent(originalParent, true);
+        offsetRoot.transform.position = worldPosition;
+        offsetRoot.transform.rotation = worldRotation;
+        offsetRoot.transform.localScale = Vector3.one;
+
+        modelRoot.SetParent(offsetRoot.transform, true);
+        return offsetRoot.transform;
     }
 
     void EnsureSpoutSender()
@@ -890,6 +917,7 @@ public class LauncherDebugUI : MonoBehaviour
             avatarOffsetX = nextX;
             avatarOffsetY = nextY;
             ApplyAvatarPositionOffset();
+            UpdateProfileSpriteTracking();
             SaveSettingsData();
             SaveUiState();
         }
@@ -899,6 +927,7 @@ public class LauncherDebugUI : MonoBehaviour
             avatarOffsetX = 0f;
             avatarOffsetY = 0f;
             ApplyAvatarPositionOffset();
+            UpdateProfileSpriteTracking();
             SaveSettingsData();
             SaveUiState();
         }
@@ -1312,14 +1341,14 @@ public class LauncherDebugUI : MonoBehaviour
 
     void LoadUiState()
     {
-        currentMode = (StreamerUiMode)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentMode", (int)currentMode), 0, 2);
+        currentMode = StreamerUiMode.Setup;
         currentPreset = (BroadcastPreset)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentPreset", (int)currentPreset), 0, 1);
         transparentBackground = PlayerPrefs.GetInt("ui.transparentBackground", transparentBackground ? 1 : 0) == 1;
-        controlPanelVisible = PlayerPrefs.GetInt("ui.controlPanelVisible", controlPanelVisible ? 1 : 0) == 1;
+        controlPanelVisible = true;
         profileSpriteVisible = PlayerPrefs.GetInt("ui.profileSpriteVisible", profileSpriteVisible ? 1 : 0) == 1;
         guideVisible = PlayerPrefs.GetInt("ui.guideVisible", guideVisible ? 1 : 0) == 1;
-        settingsWindowVisible = PlayerPrefs.GetInt("ui.settingsWindowVisible", settingsWindowVisible ? 1 : 0) == 1;
-        currentSettingsTab = (SettingsTab)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentSettingsTab", (int)currentSettingsTab), 0, 5);
+        settingsWindowVisible = false;
+        currentSettingsTab = SettingsTab.Ports;
         previewStrengthValue = PlayerPrefs.GetFloat("ui.previewStrength", previewStrengthValue);
         cameraDepthOffset = PlayerPrefs.GetFloat("ui.cameraDepthOffset", cameraDepthOffset);
         projectileScaleMultiplier = PlayerPrefs.GetFloat("ui.projectileScaleMultiplier", projectileScaleMultiplier);
@@ -1393,14 +1422,10 @@ public class LauncherDebugUI : MonoBehaviour
     {
         bool dirty = false;
 
-        PlayerPrefs.SetInt("ui.currentMode", (int)currentMode);
         PlayerPrefs.SetInt("ui.currentPreset", (int)currentPreset);
         PlayerPrefs.SetInt("ui.transparentBackground", transparentBackground ? 1 : 0);
-        PlayerPrefs.SetInt("ui.controlPanelVisible", controlPanelVisible ? 1 : 0);
         PlayerPrefs.SetInt("ui.profileSpriteVisible", profileSpriteVisible ? 1 : 0);
         PlayerPrefs.SetInt("ui.guideVisible", guideVisible ? 1 : 0);
-        PlayerPrefs.SetInt("ui.settingsWindowVisible", settingsWindowVisible ? 1 : 0);
-        PlayerPrefs.SetInt("ui.currentSettingsTab", (int)currentSettingsTab);
         PlayerPrefs.SetInt("ui.guide.offsetVersion", GuideOffsetStorageVersion);
         PlayerPrefs.SetFloat("ui.guide.offsetX", avatarOffsetX);
         PlayerPrefs.SetFloat("ui.guide.offsetY", avatarOffsetY);
