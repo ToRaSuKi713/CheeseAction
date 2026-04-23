@@ -34,6 +34,7 @@ public class SimpleLauncher : MonoBehaviour
     public Transform rainFirePoint;
     public bool randomlyUseRainFirePointForProjectiles = true;
     public bool aimProjectilesAtAvatarHead = true;
+    public bool makeFirePointTrackAvatarHead = true;
     public bool makeRainFirePointTrackAvatarHead = true;
 
     [Header("Machine Gun")]
@@ -146,7 +147,7 @@ public class SimpleLauncher : MonoBehaviour
     {
         TrackVSeeFaceHeartbeat();
         HandleKeyboardInput();
-        UpdateRainFirePointTracking();
+        UpdateLaunchPointTracking();
 
         if (InputKeyHelper.GetKeyDown(machineGunTestKey))
         {
@@ -160,20 +161,26 @@ public class SimpleLauncher : MonoBehaviour
         }
     }
 
-    void UpdateRainFirePointTracking()
+    void UpdateLaunchPointTracking()
     {
-        if (!makeRainFirePointTrackAvatarHead || rainFirePoint == null)
-            return;
-
         Transform headTransform = ResolveAvatarHeadTransform();
         if (headTransform == null)
             return;
 
-        Vector3 direction = headTransform.position - rainFirePoint.position;
+        TrackLaunchPointToHead(firePoint, headTransform, makeFirePointTrackAvatarHead);
+        TrackLaunchPointToHead(rainFirePoint, headTransform, makeRainFirePointTrackAvatarHead);
+    }
+
+    void TrackLaunchPointToHead(Transform launchPoint, Transform headTransform, bool enabled)
+    {
+        if (!enabled || launchPoint == null || headTransform == null)
+            return;
+
+        Vector3 direction = headTransform.position - launchPoint.position;
         if (direction.sqrMagnitude <= 0.0001f)
             return;
 
-        rainFirePoint.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        launchPoint.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
     }
 
     void HandleKeyboardInput()

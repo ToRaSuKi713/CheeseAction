@@ -121,6 +121,7 @@ public class LauncherDebugUI : MonoBehaviour
     private float avatarOffsetY;
     private Vector2 commandRulesScroll;
     private readonly System.Collections.Generic.List<CommandRuleRow> commandRuleRows = new System.Collections.Generic.List<CommandRuleRow>();
+    private bool commandRowsInitialized;
     private float cameraDepthOffset;
     private Vector3[] projectileScaleBaselines;
     private Transform profileSpriteHeadTarget;
@@ -966,10 +967,18 @@ public class LauncherDebugUI : MonoBehaviour
             string nextDonation = GUI.TextField(new Rect(360f, rowY + 34f, 92f, 30f), row.donationText ?? "0");
 
             GUI.Label(new Rect(468f, rowY + 10f, 130f, 18f), "\uC2E4\uD589 \uC774\uBCA4\uD2B8", mutedStyle);
-            int nextEventIndex = GUI.Toolbar(new Rect(468f, rowY + 34f, 290f, 30f), Mathf.Clamp(row.eventIndex, 0, eventOptions.Length - 1), eventOptions);
+            int nextEventIndex = GUI.Toolbar(new Rect(468f, rowY + 34f, 268f, 30f), Mathf.Clamp(row.eventIndex, 0, eventOptions.Length - 1), eventOptions);
 
-            GUI.Label(new Rect(774f, rowY + 10f, 80f, 18f), "\uD6A8\uACFC\uC74C", mutedStyle);
-            int nextSoundIndex = GUI.Toolbar(new Rect(774f, rowY + 34f, 142f, 30f), Mathf.Clamp(row.soundIndex, 0, soundOptions.Length - 1), soundOptions);
+            GUI.Label(new Rect(746f, rowY + 10f, 80f, 18f), "\uD6A8\uACFC\uC74C", mutedStyle);
+            int nextSoundIndex = GUI.Toolbar(new Rect(746f, rowY + 34f, 132f, 30f), Mathf.Clamp(row.soundIndex, 0, soundOptions.Length - 1), soundOptions);
+
+            if (GUI.Button(new Rect(888f, rowY + 34f, 42f, 30f), "\uC0AD\uC81C", subtleButtonStyle))
+            {
+                commandRuleRows.RemoveAt(i);
+                SaveSettingsData();
+                ApplyCommandSettings();
+                GUIUtility.ExitGUI();
+            }
 
             if (nextChat != row.chatText || nextDonation != row.donationText || nextEventIndex != row.eventIndex || nextSoundIndex != row.soundIndex)
             {
@@ -1287,6 +1296,7 @@ public class LauncherDebugUI : MonoBehaviour
         avatarOffsetY = Mathf.Clamp(avatarOffsetY, -2.0f, 2.0f);
 
         commandRuleRows.Clear();
+        bool hasSavedCommandRules = PlayerPrefs.HasKey("ui.command.rules.json");
         string json = PlayerPrefs.GetString("ui.command.rules.json", string.Empty);
         if (!string.IsNullOrWhiteSpace(json))
         {
@@ -1303,7 +1313,9 @@ public class LauncherDebugUI : MonoBehaviour
             }
         }
 
-        EnsureDefaultCommandRows();
+        if (!hasSavedCommandRules)
+            AddDefaultCommandRows();
+        commandRowsInitialized = true;
     }
 
     void SaveUiState()
@@ -1488,6 +1500,15 @@ public class LauncherDebugUI : MonoBehaviour
     }
 
     void EnsureDefaultCommandRows()
+    {
+        if (commandRowsInitialized)
+            return;
+
+        AddDefaultCommandRows();
+        commandRowsInitialized = true;
+    }
+
+    void AddDefaultCommandRows()
     {
         while (commandRuleRows.Count < 3)
             commandRuleRows.Add(new CommandRuleRow());
