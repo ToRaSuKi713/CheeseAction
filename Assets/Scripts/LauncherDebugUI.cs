@@ -118,7 +118,7 @@ public class LauncherDebugUI : MonoBehaviour
     private float stickerOffsetX = 0f;
     private float stickerOffsetY = 0.02f;
     private const int GuideOffsetStorageVersion = 2;
-    private const float GuideOffsetLimit = 1.0f;
+    private const float GuideOffsetLimit = 3.0f;
     private const float GuideOffsetWorldScale = 0.25f;
     private float avatarOffsetX;
     private float avatarOffsetY;
