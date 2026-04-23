@@ -161,6 +161,11 @@ public class SimpleLauncher : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        UpdateLaunchPointTracking();
+    }
+
     void UpdateLaunchPointTracking()
     {
         Transform headTransform = ResolveAvatarHeadTransform();
@@ -452,6 +457,8 @@ public class SimpleLauncher : MonoBehaviour
             Debug.LogWarning("No launch point is assigned.");
             return;
         }
+
+        UpdateLaunchPointTracking();
 
         if (projectileEnabled && selectedProjectilePrefab == null)
         {
@@ -1113,8 +1120,18 @@ public class SimpleLauncher : MonoBehaviour
         if (headArmPoseController == null)
             headArmPoseController = Object.FindAnyObjectByType<HeadArmPoseController>();
 
-        if (headArmPoseController != null && headArmPoseController.EffectiveHeadTransform != null)
-            return headArmPoseController.EffectiveHeadTransform;
+        if (headArmPoseController != null)
+        {
+            if (headArmPoseController.StickerHeadTransform != null)
+                return headArmPoseController.StickerHeadTransform;
+
+            if (headArmPoseController.EffectiveHeadTransform != null)
+                return headArmPoseController.EffectiveHeadTransform;
+        }
+
+        GameObject headTarget = GameObject.Find("HeadTarget");
+        if (headTarget != null)
+            return headTarget.transform;
 
         GameObject modelRoot = ResolveVSeeFaceModelRoot();
         Animator animator = modelRoot != null

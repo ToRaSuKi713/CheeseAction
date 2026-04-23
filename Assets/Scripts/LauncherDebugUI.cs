@@ -117,6 +117,9 @@ public class LauncherDebugUI : MonoBehaviour
     private float stickerScale = 0.55f;
     private float stickerOffsetX = 0f;
     private float stickerOffsetY = 0.02f;
+    private const int GuideOffsetStorageVersion = 2;
+    private const float GuideOffsetLimit = 1.0f;
+    private const float GuideOffsetWorldScale = 0.25f;
     private float avatarOffsetX;
     private float avatarOffsetY;
     private Vector2 commandRulesScroll;
@@ -142,8 +145,10 @@ public class LauncherDebugUI : MonoBehaviour
         EnsureLoginManager();
         CacheCameraBaselineIfNeeded();
         EnsureSpoutSender();
-        ApplyPreset(currentPreset);
         LoadUiState();
+        float savedPreviewStrength = previewStrengthValue;
+        ApplyPreset(currentPreset);
+        previewStrengthValue = savedPreviewStrength;
         LoadSettingsData();
         SyncPortTexts();
         ApplyBackgroundState();
@@ -177,24 +182,40 @@ public class LauncherDebugUI : MonoBehaviour
             ToggleBackgroundTransparency();
 
         if (InputKeyHelper.GetKeyDown(debugUiToggleKey))
+        {
             controlPanelVisible = !controlPanelVisible;
+            SaveUiState();
+        }
 
         if (InputKeyHelper.GetKeyDown(profileSpriteToggleKey))
         {
             profileSpriteVisible = !profileSpriteVisible;
             SetProfileSpriteVisible(profileSpriteVisible);
+            SaveUiState();
         }
 
         if (InputKeyHelper.GetKeyDown(weakPresetKey))
+        {
             ApplyPreset(BroadcastPreset.Weak);
+            SaveUiState();
+        }
 
         if (InputKeyHelper.GetKeyDown(strongPresetKey))
+        {
             ApplyPreset(BroadcastPreset.Strong);
+            SaveUiState();
+        }
     }
 
     void LateUpdate()
     {
         ApplyAvatarPositionOffset();
+    }
+
+    void OnApplicationQuit()
+    {
+        SaveUiState();
+        SaveSettingsData();
     }
 
     void OnGUI()
@@ -368,6 +389,7 @@ public class LauncherDebugUI : MonoBehaviour
     {
         transparentBackground = !transparentBackground;
         ApplyBackgroundState();
+        SaveUiState();
     }
 
     void CacheCameraBaselineIfNeeded()
@@ -526,6 +548,7 @@ public class LauncherDebugUI : MonoBehaviour
             settingsWindowVisible = !settingsWindowVisible;
             if (settingsWindowVisible)
                 SyncPortTexts();
+            SaveUiState();
         }
 
         if (settingsButtonTexture == null)
@@ -556,10 +579,14 @@ public class LauncherDebugUI : MonoBehaviour
             guideVisible = !guideVisible;
             profileSpriteVisible = guideVisible;
             SetProfileSpriteVisible(profileSpriteVisible);
+            SaveUiState();
         }
 
         if (GUI.Button(new Rect(panel.x + 178f, panel.y + 82f, 148f, 38f), "기본 설정", primaryButtonStyle))
+        {
             currentMode = StreamerUiMode.Preview;
+            SaveUiState();
+        }
 
         if (GUI.Button(new Rect(panel.x + 338f, panel.y + 82f, 148f, 38f), "배경 투명화", primaryButtonStyle))
             ToggleBackgroundTransparency();
@@ -594,6 +621,7 @@ public class LauncherDebugUI : MonoBehaviour
             guideVisible = !guideVisible;
             profileSpriteVisible = guideVisible;
             SetProfileSpriteVisible(profileSpriteVisible);
+            SaveUiState();
         }
 
         GUI.Label(new Rect(left.x + 18f, left.y + 156f, 280f, 22f), "반응 강도", bodyStyle);
@@ -626,7 +654,10 @@ public class LauncherDebugUI : MonoBehaviour
             ToggleBackgroundTransparency();
 
         if (GUI.Button(new Rect(right.x + 18f, right.y + 142f, 324f, 24f), "위치 맞추기로 돌아가기", secondaryButtonStyle))
+        {
             currentMode = StreamerUiMode.Setup;
+            SaveUiState();
+        }
     }
 
     void DrawSettingsWindow()
@@ -641,21 +672,40 @@ public class LauncherDebugUI : MonoBehaviour
         if (GUI.Button(new Rect(panel.x + panel.width - 54f, panel.y + 14f, 34f, 28f), "X", subtleButtonStyle))
         {
             settingsWindowVisible = false;
+            SaveUiState();
             return;
         }
 
         if (GUI.Button(new Rect(panel.x + 20f, panel.y + 56f, 130f, 30f), "포트 수정", currentSettingsTab == SettingsTab.Ports ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Ports;
+            SaveUiState();
+        }
         if (GUI.Button(new Rect(panel.x + 160f, panel.y + 56f, 140f, 30f), "치지직 로그인", currentSettingsTab == SettingsTab.Chzzk ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Chzzk;
+            SaveUiState();
+        }
         if (GUI.Button(new Rect(panel.x + 310f, panel.y + 56f, 110f, 30f), "소리 설정", currentSettingsTab == SettingsTab.Sound ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Sound;
+            SaveUiState();
+        }
         if (GUI.Button(new Rect(panel.x + 430f, panel.y + 56f, 180f, 30f), "명령어 커스텀", currentSettingsTab == SettingsTab.Commands ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Commands;
+            SaveUiState();
+        }
         if (GUI.Button(new Rect(panel.x + 620f, panel.y + 56f, 190f, 30f), "\uC2A4\uD2F0\uCEE4 \uD06C\uAE30, \uC704\uCE58", currentSettingsTab == SettingsTab.Sticker ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Sticker;
-        if (GUI.Button(new Rect(panel.x + 820f, panel.y + 56f, 190f, 30f), "\uC544\uBC14\uD0C0 \uC704\uCE58 \uC870\uC808", currentSettingsTab == SettingsTab.Avatar ? primaryButtonStyle : subtleButtonStyle))
+            SaveUiState();
+        }
+        if (GUI.Button(new Rect(panel.x + 820f, panel.y + 56f, 190f, 30f), "\uAC00\uC774\uB4DC \uC704\uCE58 \uC870\uC808", currentSettingsTab == SettingsTab.Avatar ? primaryButtonStyle : subtleButtonStyle))
+        {
             currentSettingsTab = SettingsTab.Avatar;
+            SaveUiState();
+        }
 
         switch (currentSettingsTab)
         {
@@ -832,11 +882,8 @@ public class LauncherDebugUI : MonoBehaviour
         float x = panel.x + 24f;
         float y = panel.y + 108f;
 
-        GUI.Label(new Rect(x, y, 420f, 24f), "\uC544\uBC14\uD0C0 \uC704\uCE58 \uC870\uC808", sectionStyle);
-        GUI.Label(new Rect(x, y + 30f, 680f, 22f), "\uC720\uB2C8\uD2F0 \uD14C\uC2A4\uD2B8 \uC544\uBC14\uD0C0 \uC804\uCCB4\uB97C \uD654\uBA74 \uC548\uC5D0\uC11C \uC774\uB3D9\uD569\uB2C8\uB2E4.", mutedStyle);
-
-        float nextX = DrawStickerSlider(x, y + 72f, "\uC624\uB978\uCABD / \uC67C\uCABD", avatarOffsetX, -2.0f, 2.0f);
-        float nextY = DrawStickerSlider(x, y + 126f, "\uC544\uB798 / \uC704", avatarOffsetY, -2.0f, 2.0f);
+        float nextX = DrawStickerSlider(x, y + 18f, "\uC624\uB978\uCABD / \uC67C\uCABD", avatarOffsetX, -GuideOffsetLimit, GuideOffsetLimit);
+        float nextY = DrawStickerSlider(x, y + 72f, "\uC544\uB798 / \uC704", avatarOffsetY, -GuideOffsetLimit, GuideOffsetLimit);
 
         if (!Mathf.Approximately(nextX, avatarOffsetX) || !Mathf.Approximately(nextY, avatarOffsetY))
         {
@@ -844,14 +891,16 @@ public class LauncherDebugUI : MonoBehaviour
             avatarOffsetY = nextY;
             ApplyAvatarPositionOffset();
             SaveSettingsData();
+            SaveUiState();
         }
 
-        if (GUI.Button(new Rect(x, y + 196f, 180f, 32f), "\uCD08\uAE30\uD654", secondaryButtonStyle))
+        if (GUI.Button(new Rect(x, y + 142f, 180f, 32f), "\uCD08\uAE30\uD654", secondaryButtonStyle))
         {
             avatarOffsetX = 0f;
             avatarOffsetY = 0f;
             ApplyAvatarPositionOffset();
             SaveSettingsData();
+            SaveUiState();
         }
     }
 
@@ -1263,6 +1312,14 @@ public class LauncherDebugUI : MonoBehaviour
 
     void LoadUiState()
     {
+        currentMode = (StreamerUiMode)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentMode", (int)currentMode), 0, 2);
+        currentPreset = (BroadcastPreset)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentPreset", (int)currentPreset), 0, 1);
+        transparentBackground = PlayerPrefs.GetInt("ui.transparentBackground", transparentBackground ? 1 : 0) == 1;
+        controlPanelVisible = PlayerPrefs.GetInt("ui.controlPanelVisible", controlPanelVisible ? 1 : 0) == 1;
+        profileSpriteVisible = PlayerPrefs.GetInt("ui.profileSpriteVisible", profileSpriteVisible ? 1 : 0) == 1;
+        guideVisible = PlayerPrefs.GetInt("ui.guideVisible", guideVisible ? 1 : 0) == 1;
+        settingsWindowVisible = PlayerPrefs.GetInt("ui.settingsWindowVisible", settingsWindowVisible ? 1 : 0) == 1;
+        currentSettingsTab = (SettingsTab)Mathf.Clamp(PlayerPrefs.GetInt("ui.currentSettingsTab", (int)currentSettingsTab), 0, 5);
         previewStrengthValue = PlayerPrefs.GetFloat("ui.previewStrength", previewStrengthValue);
         cameraDepthOffset = PlayerPrefs.GetFloat("ui.cameraDepthOffset", cameraDepthOffset);
         projectileScaleMultiplier = PlayerPrefs.GetFloat("ui.projectileScaleMultiplier", projectileScaleMultiplier);
@@ -1287,13 +1344,27 @@ public class LauncherDebugUI : MonoBehaviour
         stickerScale = PlayerPrefs.GetFloat("ui.sticker.scale", stickerScale);
         stickerOffsetX = PlayerPrefs.GetFloat("ui.sticker.offsetX", stickerOffsetX);
         stickerOffsetY = PlayerPrefs.GetFloat("ui.sticker.offsetY", stickerOffsetY);
-        avatarOffsetX = PlayerPrefs.GetFloat("ui.avatar.offsetX", avatarOffsetX);
-        avatarOffsetY = PlayerPrefs.GetFloat("ui.avatar.offsetY", avatarOffsetY);
+        if (PlayerPrefs.GetInt("ui.guide.offsetVersion", 0) < GuideOffsetStorageVersion)
+        {
+            avatarOffsetX = 0f;
+            avatarOffsetY = 0f;
+            PlayerPrefs.DeleteKey("ui.avatar.offsetX");
+            PlayerPrefs.DeleteKey("ui.avatar.offsetY");
+            PlayerPrefs.SetFloat("ui.guide.offsetX", avatarOffsetX);
+            PlayerPrefs.SetFloat("ui.guide.offsetY", avatarOffsetY);
+            PlayerPrefs.SetInt("ui.guide.offsetVersion", GuideOffsetStorageVersion);
+            PlayerPrefs.Save();
+        }
+        else
+        {
+            avatarOffsetX = PlayerPrefs.GetFloat("ui.guide.offsetX", avatarOffsetX);
+            avatarOffsetY = PlayerPrefs.GetFloat("ui.guide.offsetY", avatarOffsetY);
+        }
         stickerScale = Mathf.Clamp(stickerScale, 0.10f, 2.50f);
         stickerOffsetX = Mathf.Clamp(stickerOffsetX, -0.60f, 0.60f);
         stickerOffsetY = Mathf.Clamp(stickerOffsetY, -0.60f, 0.60f);
-        avatarOffsetX = Mathf.Clamp(avatarOffsetX, -2.0f, 2.0f);
-        avatarOffsetY = Mathf.Clamp(avatarOffsetY, -2.0f, 2.0f);
+        avatarOffsetX = Mathf.Clamp(avatarOffsetX, -GuideOffsetLimit, GuideOffsetLimit);
+        avatarOffsetY = Mathf.Clamp(avatarOffsetY, -GuideOffsetLimit, GuideOffsetLimit);
 
         commandRuleRows.Clear();
         bool hasSavedCommandRules = PlayerPrefs.HasKey("ui.command.rules.json");
@@ -1321,6 +1392,19 @@ public class LauncherDebugUI : MonoBehaviour
     void SaveUiState()
     {
         bool dirty = false;
+
+        PlayerPrefs.SetInt("ui.currentMode", (int)currentMode);
+        PlayerPrefs.SetInt("ui.currentPreset", (int)currentPreset);
+        PlayerPrefs.SetInt("ui.transparentBackground", transparentBackground ? 1 : 0);
+        PlayerPrefs.SetInt("ui.controlPanelVisible", controlPanelVisible ? 1 : 0);
+        PlayerPrefs.SetInt("ui.profileSpriteVisible", profileSpriteVisible ? 1 : 0);
+        PlayerPrefs.SetInt("ui.guideVisible", guideVisible ? 1 : 0);
+        PlayerPrefs.SetInt("ui.settingsWindowVisible", settingsWindowVisible ? 1 : 0);
+        PlayerPrefs.SetInt("ui.currentSettingsTab", (int)currentSettingsTab);
+        PlayerPrefs.SetInt("ui.guide.offsetVersion", GuideOffsetStorageVersion);
+        PlayerPrefs.SetFloat("ui.guide.offsetX", avatarOffsetX);
+        PlayerPrefs.SetFloat("ui.guide.offsetY", avatarOffsetY);
+        dirty = true;
 
         if (!Mathf.Approximately(lastSavedPreviewStrength, previewStrengthValue))
         {
@@ -1358,8 +1442,9 @@ public class LauncherDebugUI : MonoBehaviour
         PlayerPrefs.SetFloat("ui.sticker.scale", stickerScale);
         PlayerPrefs.SetFloat("ui.sticker.offsetX", stickerOffsetX);
         PlayerPrefs.SetFloat("ui.sticker.offsetY", stickerOffsetY);
-        PlayerPrefs.SetFloat("ui.avatar.offsetX", avatarOffsetX);
-        PlayerPrefs.SetFloat("ui.avatar.offsetY", avatarOffsetY);
+        PlayerPrefs.SetInt("ui.guide.offsetVersion", GuideOffsetStorageVersion);
+        PlayerPrefs.SetFloat("ui.guide.offsetX", avatarOffsetX);
+        PlayerPrefs.SetFloat("ui.guide.offsetY", avatarOffsetY);
         CommandRuleCollection collection = new CommandRuleCollection { rows = commandRuleRows.ToArray() };
         PlayerPrefs.SetString("ui.command.rules.json", JsonUtility.ToJson(collection));
         PlayerPrefs.Save();
@@ -1477,9 +1562,9 @@ public class LauncherDebugUI : MonoBehaviour
         if (avatarRoot == null || !avatarBasePositionInitialized)
             return;
 
-        avatarOffsetX = Mathf.Clamp(avatarOffsetX, -2.0f, 2.0f);
-        avatarOffsetY = Mathf.Clamp(avatarOffsetY, -2.0f, 2.0f);
-        avatarRoot.position = avatarBasePosition + new Vector3(avatarOffsetX, avatarOffsetY, 0f);
+        avatarOffsetX = Mathf.Clamp(avatarOffsetX, -GuideOffsetLimit, GuideOffsetLimit);
+        avatarOffsetY = Mathf.Clamp(avatarOffsetY, -GuideOffsetLimit, GuideOffsetLimit);
+        avatarRoot.position = avatarBasePosition + new Vector3(avatarOffsetX, avatarOffsetY, 0f) * GuideOffsetWorldScale;
     }
 
     void PreviewStickerEvent()
