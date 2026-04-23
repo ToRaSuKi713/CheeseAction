@@ -41,6 +41,7 @@ public class ChzzkLoginManager : MonoBehaviour
 
     void Awake()
     {
+        AuthStorage.ClearLegacySensitivePrefs();
         installId = AuthStorage.GetOrCreateInstallId();
         apiClient = new AppAuthApiClient(backendBaseUrl, requestTimeoutSeconds);
         callbackListener = new LocalOAuthCallbackListener();

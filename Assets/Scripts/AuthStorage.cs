@@ -25,6 +25,10 @@ public static class AuthStorage
     public const string BackendBaseUrlKey = "auth.backendBaseUrl";
     public const string AppSessionTokenKey = "auth.appSessionToken";
     public const string ChannelIdKey = "auth.channelId";
+    public const string LegacyChzzkChannelKey = "ui.chzzk.channel";
+    public const string LegacyChzzkTokenKey = "ui.chzzk.token";
+    public const string LegacyAccessTokenKey = "auth.accessToken";
+    public const string LegacyRefreshTokenKey = "auth.refreshToken";
 
     public static string GetOrCreateInstallId()
     {
@@ -77,7 +81,41 @@ public static class AuthStorage
     {
         PlayerPrefs.DeleteKey(AppSessionTokenKey);
         PlayerPrefs.DeleteKey(ChannelIdKey);
+        PlayerPrefs.DeleteKey(LegacyAccessTokenKey);
+        PlayerPrefs.DeleteKey(LegacyRefreshTokenKey);
         PlayerPrefs.Save();
+    }
+
+    public static void ClearLegacySensitivePrefs()
+    {
+        bool dirty = false;
+
+        if (PlayerPrefs.HasKey(LegacyChzzkChannelKey))
+        {
+            PlayerPrefs.DeleteKey(LegacyChzzkChannelKey);
+            dirty = true;
+        }
+
+        if (PlayerPrefs.HasKey(LegacyChzzkTokenKey))
+        {
+            PlayerPrefs.DeleteKey(LegacyChzzkTokenKey);
+            dirty = true;
+        }
+
+        if (PlayerPrefs.HasKey(LegacyAccessTokenKey))
+        {
+            PlayerPrefs.DeleteKey(LegacyAccessTokenKey);
+            dirty = true;
+        }
+
+        if (PlayerPrefs.HasKey(LegacyRefreshTokenKey))
+        {
+            PlayerPrefs.DeleteKey(LegacyRefreshTokenKey);
+            dirty = true;
+        }
+
+        if (dirty)
+            PlayerPrefs.Save();
     }
 
     private static void SaveProtectedString(string key, string value)

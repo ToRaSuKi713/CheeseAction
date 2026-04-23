@@ -109,8 +109,6 @@ public class LauncherDebugUI : MonoBehaviour
     private string vmcReceivePortText = "39541";
     private string vmcSendPortText = "39540";
     private string eventReceivePortText = "9000";
-    private string chzzkChannelText = string.Empty;
-    private string chzzkTokenText = string.Empty;
     private string chzzkBackendUrlText = string.Empty;
     private float masterVolume = 1f;
     private float effectVolume = 1f;
@@ -781,30 +779,6 @@ public class LauncherDebugUI : MonoBehaviour
             ApplyPortSettings();
     }
 
-    void DrawChzzkTab(Rect panel)
-    {
-        float x = panel.x + 24f;
-        float y = panel.y + 108f;
-
-        GUI.Label(new Rect(x, y, 280f, 22f), "치지직 채널 ID", bodyStyle);
-        string nextChannel = GUI.TextField(new Rect(x, y + 28f, 360f, 28f), chzzkChannelText);
-        if (nextChannel != chzzkChannelText)
-        {
-            chzzkChannelText = nextChannel;
-            SaveSettingsData();
-        }
-
-        GUI.Label(new Rect(x, y + 78f, 280f, 22f), "치지직 토큰", bodyStyle);
-        string nextToken = GUI.TextField(new Rect(x, y + 106f, 360f, 28f), chzzkTokenText);
-        if (nextToken != chzzkTokenText)
-        {
-            chzzkTokenText = nextToken;
-            SaveSettingsData();
-        }
-
-        GUI.Label(new Rect(x, y + 156f, 520f, 22f), "로그인 기능은 다음 단계에서 실제 연동을 붙일 수 있게 준비중입니다.", mutedStyle);
-    }
-
     void DrawChzzkLoginTab(Rect panel)
     {
         float x = panel.x + 24f;
@@ -1362,8 +1336,7 @@ public class LauncherDebugUI : MonoBehaviour
 
     void LoadSettingsData()
     {
-        chzzkChannelText = PlayerPrefs.GetString("ui.chzzk.channel", chzzkChannelText);
-        chzzkTokenText = PlayerPrefs.GetString("ui.chzzk.token", chzzkTokenText);
+        AuthStorage.ClearLegacySensitivePrefs();
         if (loginManager != null && loginManager.CanOverrideBackendUrl)
             chzzkBackendUrlText = AuthStorage.GetBackendBaseUrl(chzzkBackendUrlText);
         else if (loginManager != null)
@@ -1458,8 +1431,6 @@ public class LauncherDebugUI : MonoBehaviour
 
     void SaveSettingsData()
     {
-        PlayerPrefs.SetString("ui.chzzk.channel", chzzkChannelText);
-        PlayerPrefs.SetString("ui.chzzk.token", chzzkTokenText);
         if (loginManager != null && loginManager.CanOverrideBackendUrl)
             AuthStorage.SetBackendBaseUrl(chzzkBackendUrlText);
         PlayerPrefs.SetFloat("ui.sound.master", masterVolume);
